@@ -113,11 +113,11 @@ function report2words(report) {
 						n++;
 					}
 					words.push("天气现象：" + w.join(","));
-				} else {
+				} 
+				if(n<rawReport[n].length){
 					words.push(element2words(elementiswhat(rawReport[n]), rawReport[n]));
-
+					n++;
 				}
-				n++;
 			}
 		}
 	}
