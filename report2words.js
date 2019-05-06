@@ -338,6 +338,6 @@ function getWind(wind) {
 	return [wd, ws, gust];
 }
 
-// module.export(){
-// 	report2words
-// }
+module.export(){
+	report2words
+}
