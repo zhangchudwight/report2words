@@ -1,5 +1,6 @@
 let apMetar =
-	"METAR ZGSZ 111200Z 36008G12MPS 200V360 8000 R16/0550V1500U TSRA BR SCT013 BKN040 17/15 Q1015 RETSRA BECMG AT0735 12008MPS 0800 BR FG GR +TSRA FEW015 SCT020 BKN025CB=";
+	"METAR ZGSZ 111200Z 36008G12MPS 200V360 8000 R16/0550V1500U TSRA BR SCT013 BKN040 17/15 Q1015 RETSRA NOSIG"
+//BECMG AT0735 12008MPS 0800 BR FG GR +TSRA FEW015 SCT020 BKN025CB=";
 let apTaf =
 	"TAF AMD ZGSZ 111710Z 111212 10002MPS 6000 BR SCT011 BKN030 TX18/06Z TN14/22Z BECMG 1416 36008G15MPS 2500 -TSRA BKN023 OVC050 TEMPO 1218 36002MPS 0800 TSRA SCT011 FEW020CB OVC030="
 apTaf = "TAF AMD ZSLQ 251239Z 252106 02004MPS 1200 BR SCT012 OVC040 TX20/12Z TN17/21Z TEMPO 1216 0600 FG -DZ="
@@ -173,7 +174,10 @@ function elementiswhat(code) {
 			{
 				return "metartemp";
 			}
-
+		case (/NOSIG/.test(code)):
+			{
+				return "nosig";
+			}
 		default:
 			return "weather";
 	}
@@ -261,29 +265,29 @@ function element2words(type, code) {
 			}
 		case "rvr":
 			{
-				let rvr = /R\d{2}\w*\//.exec(code)[0].replace("R","").replace("/","") + "号跑道RVR";
+				let rvr = /R\d{2}\w*\//.exec(code)[0].replace("R", "").replace("/", "") + "号跑道RVR";
 				let v = /\/\S*/.exec(code)[0];
 				switch (true) {
 					case (/M/.test(v)):
 						{
-							rvr = rvr + "小于" + Number(/\d{4}/.exec(v)[0])+"M";
+							rvr = rvr + "小于" + Number(/\d{4}/.exec(v)[0]) + "M";
 							break;
 						}
 					case (/V/.test(v)):
 						{
 							let r1 = parseInt(/\d{4}V/.exec(v)) + "M";
-							let r2 = parseInt(/V\d{4}/.exec(v)[0].replace("V","")) + "M";
+							let r2 = parseInt(/V\d{4}/.exec(v)[0].replace("V", "")) + "M";
 							rvr = rvr + "在" + r1 + "到" + r2 + "间变化"
 							break;
 						}
 					case (/P/.test(v)):
 						{
-							rvr=rvr+"大于"+Number(/\d{4}/.exec(v)[0])+"M";
+							rvr = rvr + "大于" + Number(/\d{4}/.exec(v)[0]) + "M";
 							break;
 						}
 					default:
 						{
-							rvr = rvr + Number(/\d{4}/.exec(v)[0])+"M";
+							rvr = rvr + Number(/\d{4}/.exec(v)[0]) + "M";
 							break;
 						}
 				}
@@ -305,6 +309,10 @@ function element2words(type, code) {
 						}
 				}
 				return rvr;
+			}
+		case "nosig":
+			{
+				return "无重大天气变化";
 			}
 	}
 }
