@@ -1,14 +1,15 @@
 let apMetar =
-	"METAR ZGSZ 111200Z 36008G12MPS 200V360 8000 R16/0550V1500U TSRA BR SCT013 BKN040 17/15 Q1015 RETSRA NOSIG"
+	"METAR ZGSZ AUTO 111200Z 36008G12MPS 200V360 8000 R16/0550V1500U TSRA BR SCT013 BKN040 17/15 Q1015 RETSRA NOSIG"
 //BECMG AT0735 12008MPS 0800 BR FG GR +TSRA FEW015 SCT020 BKN025CB=";
 let apTaf =
 	"TAF AMD ZGSZ 111710Z 111212 10002MPS 6000 BR SCT011 BKN030 TX18/06Z TN14/22Z BECMG 1416 36008G15MPS 2500 -TSRA BKN023 OVC050 TEMPO 1218 36002MPS 0800 TSRA SCT011 FEW020CB OVC030="
 apTaf = "TAF AMD ZSLQ 251239Z 252106 02004MPS 1200 BR SCT012 OVC040 TX20/12Z TN17/21Z TEMPO 1216 0600 FG -DZ="
 const fs = require('fs');
 const dict = JSON.parse(fs.readFileSync("./dict.json"));
-
+// 
 console.log(apTaf, report2words(apTaf));
 console.log(apMetar, report2words(apMetar));
+// 
 
 function report2words(report) {
 	let rawReport = report.replace("=", "").split(" "),
@@ -31,12 +32,14 @@ function report2words(report) {
 		tafvalidtime = "有效时间" + startdate + "日" + starthour + "时—" + enddate + "日" + endhour + "时的";
 	}
 	if (/[AMDCOR]{3}/.test(rawReport[n])) {
-		let timewords = rawReport[n + 2].substr(0, 2) + "日" + rawReport[n + 2].substr(2, 2) + "时" + rawReport[n + 2].substr(4,
-			2) + "分UTC"
+		let sendtime=/\d{6}Z/.exec(report)[0];
+		let timewords = sendtime.substr(0, 2) + "日" + sendtime.substr(2, 2) + "时" + sendtime.substr(4,
+			2) + "分UTC";
 		words[0] = rawReport[n + 1] + timewords + "发布的" + tafvalidtime + words[0] + dict[rawReport[n]];
 
 	} else {
-		let timewords = rawReport[n + 1].substr(0, 2) + "日" + rawReport[n + 1].substr(2, 2) + "时" + rawReport[n + 1].substr(4,
+		let sendtime=/\d{6}Z/.exec(report)[0];
+		let timewords = sendtime.substr(0, 2) + "日" + sendtime.substr(2, 2) + "时" + sendtime.substr(4,
 			2) + "分UTC"
 		let auto = /AUTO/.test(report) ? "自动化(AUTO)" : "";
 		words[0] = rawReport[n] + timewords + "发布的" + tafvalidtime + auto + words[0];
@@ -338,6 +341,6 @@ function getWind(wind) {
 	return [wd, ws, gust];
 }
 
-module.export(){
-	report2words
-}
+// module.export(){
+// 	report2words
+// }
