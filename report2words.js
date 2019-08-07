@@ -1,9 +1,9 @@
 let apMetar =
-	"METAR ZGSZ AUTO 111200Z 36008G12MPS 200V360 8000 R16/0550V1500U TSRA BR SCT013 BKN040 17/15 Q1015 RETSRA NOSIG"
+	"METAR ZGSZ AUTO 111200Z 36008G12MPS 200V360 8000 R16/0550V1500U TSRA BR NSC 17/15 Q1015 RETSRA NOSIG"
 //BECMG AT0735 12008MPS 0800 BR FG GR +TSRA FEW015 SCT020 BKN025CB=";
 let apTaf =
 	"TAF AMD ZGSZ 111710Z 111212 10002MPS 6000 BR SCT011 BKN030 TX18/06Z TN14/22Z BECMG 1416 36008G15MPS 2500 -TSRA BKN023 OVC050 TEMPO 1218 36002MPS 0800 TSRA SCT011 FEW020CB OVC030="
-apTaf = "TAF AMD ZSLQ 251239Z 252106 02004MPS 1200 BR SCT012 OVC040 TX20/12Z TN17/21Z TEMPO 1216 0600 FG -DZ="
+//apTaf = "TAF AMD ZSLQ 251239Z 252106 02004MPS 1200 BR SCT012 OVC040 TX20/12Z TN17/21Z TEMPO 1216 0600 FG -DZ="
 const fs = require('fs');
 const dict = JSON.parse(fs.readFileSync("./dict.json"));
 // 
@@ -46,7 +46,7 @@ function report2words(report) {
 
 	}
 	//找到风组
-	while (!/MPS/.test(rawReport[n])) n++;
+	while (!/MPS|KT/.test(rawReport[n])) n++;
 	words.push(element2words("wind", rawReport[n]));
 	n++;
 	//风向变化
@@ -59,7 +59,7 @@ function report2words(report) {
 		words.push(element2words("CAVOK", rawReport[n]));
 	} else {
 		while (n < rawReport.length) {
-			if (/BECMG/.test(rawReport[n]) || /TEMPO/.test(rawReport[n]) || /FM/.test(rawReport[n])) {
+			if (/BECMG|TEMPO|FM/.test(rawReport[n])) {
 				if (/TAF/.test(report)) {
 					switch (true) {
 						case /BECMG/.test(rawReport[n]):
@@ -211,13 +211,7 @@ function element2words(type, code) {
 				if (/\/\//.test(code)) {
 					weather = "未观测天气";
 				}
-				if (/[\+\-]{1}/.test(code)) {
-					weather = weather + dict[code.substr(0, 1)];
-					code = code.substr(1, code.length - 1);
-				}
-				for (let i = 0; i < code.length / 2; i++) {
-					weather = weather + dict[code.substr(i * 2, 2)];
-				}
+				weather=toTianQiXianXiang(code);
 				return weather;
 			}
 		case "cloud":
@@ -225,7 +219,11 @@ function element2words(type, code) {
 				let cloud = "";
 				if (code === "/////") {
 					cloud = "未观测云";
-				} else {
+				}
+				else if(code==="NSC"){
+					cloud=dict[code];
+				}
+				else {
 					cloud = dict[/[A-Z]+/.exec(code)[0]] + ",云高" + Number(/\d+/.exec(code)[0]) * 30 + "米";
 					if (/CB/.test(code)) {
 						cloud = cloud + ",积雨云";
@@ -256,14 +254,7 @@ function element2words(type, code) {
 			}
 		case "re":
 			{
-				let weather = code.substr(2, code.length - 2);
-				let w = "";
-				for (let i = 0; i < weather.length / 2; i++) {
-					w = w + dict[weather.substr(i * 2, 2)];
-				}
-				if (w === "阵") {
-					w = w + "雨";
-				}
+				let w = toTianQiXianXiang(code.substr(2,code.length));
 				return "近时出现" + w;
 			}
 		case "rvr":
@@ -319,7 +310,33 @@ function element2words(type, code) {
 			}
 	}
 }
-
+function toTianQiXianXiang(text) {
+	let reg = new RegExp(/[A-Z]+/, "g"),
+		weaReg = new RegExp("CAVOK|[A-Z]{2}|\\-|\\+", "g"),
+		regResult,
+		indexs = [],
+		result = text;
+	while ((regResult = reg.exec(result)) != null) {
+		regResult;
+		if (/[TSHRA]{2}/.test(regResult[0]))
+			indexs.push(regResult['index']);
+	}
+	for (let i = indexs.length - 1; i >= 0; i--) {
+		if (!/[\-\+]{1}/.test(result.substr(indexs[i] - 1, 1))) {
+			result = result.slice(0, indexs[i]) + "中" + result.slice(indexs[i], result.length);
+		}
+	}
+	indexs = [];
+	while ((regResult = weaReg.exec(result)) != null) {
+		regResult;
+		indexs.push(regResult[0]);
+	}
+	for (let i in indexs) {
+		result = result.replace(indexs[i], dict[indexs[i]]);
+	}
+	result = result.replace('强雨', '大雨');
+	return result;
+}
 function getWind(wind) {
 	let wd = wind.substr(0, 3); //风向
 	let ws, gust;
